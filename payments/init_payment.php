@@ -86,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $projectDir = rtrim(dirname($_SERVER['PHP_SELF'], 2), '/\\');
     $base_url = $protocol . $host . $projectDir;
 
-    $url_return = $base_url . '/payments/payment_success.php?order_id=' . $order_id;
-    $url_callback = $base_url . '/payments/cryptomus_webhook.php';
+    $url_return = $base_url . '/payments/payment_success?order_id=' . $order_id;
+    $url_callback = $base_url . '/payments/cryptomus_webhook';
 
     // 6. Build Cryptomus API Payload
     $payload = [
@@ -159,4 +159,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ../billing.php?error=gateway_api_error");
         exit();
     }
+} else {
+    // Redirect direct GET requests back to billing
+    header("Location: ../billing.php");
+    exit();
 }

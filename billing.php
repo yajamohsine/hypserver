@@ -31,7 +31,7 @@ $balance = $stmt->fetchColumn();
                 <div class="glass-card p-8">
                     <h3 class="text-xl font-bold mb-6 dark:text-white text-slate-800">Add Funds</h3>
                     
-                    <form action="payments/init_payment.php" method="POST" class="space-y-6" id="deposit-form">
+                    <form action="payments/init_payment" method="POST" class="space-y-6" id="deposit-form">
                         <?php csrf_field(); ?>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Amount to Deposit (EUR)</label>
