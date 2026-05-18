@@ -1,40 +1,8 @@
 <?php
-session_start();
-require_once 'config/db.php';
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
+require_once 'includes/auth_check.php';
 require_once 'includes/header.php';
 require_once 'includes/sidebar.php';
 
-$user_id = $_SESSION['user_id'];
-
-// Fetch User Data
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch();
-
-if (!$user) {
-    // If not in users table, maybe they are an admin who just migrated?
-    $stmt = $pdo->prepare("SELECT * FROM admins WHERE id = ?");
-    $stmt->execute([$user_id]);
-    $admin = $stmt->fetch();
-
-    if ($admin) {
-        $_SESSION['admin_logged_in'] = true;
-        header("Location: admin/index.php");
-        exit();
-    } else {
-        // Truly not found anywhere
-        session_destroy();
-        header("Location: login.php?error=account_not_found");
-        exit();
-    }
-}
 
 // Fetch Orders
 $stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");

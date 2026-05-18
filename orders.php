@@ -1,17 +1,7 @@
 <?php 
-session_start();
-require_once 'config/db.php';
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
+require_once 'includes/auth_check.php';
 require_once 'includes/header.php'; 
 require_once 'includes/sidebar.php'; 
-
-$user_id = $_SESSION['user_id'];
 
 // Fetch Orders
 $stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");

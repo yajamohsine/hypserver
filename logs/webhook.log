@@ -1,1 +1,5 @@
 # Cryptomus Webhook Callback Log
+[2026-05-18 23:10:31] Raw payload: {"order_id":"DEP-7D596CA707","amount":"44.00","currency":"EUR","status":"paid","network":"TRON","from":"T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb","uuid":"mock-uuid-4e3afc5821f9ee96","sign":"df9da230e40239297732226b44c7b497"}
+[2026-05-18 23:10:31] Signature successfully verified.
+[2026-05-18 23:10:31] Processing state change for DEP-7D596CA707: pending -> paid
+[2026-05-18 23:10:31] SUCCESS: Balance updated for user 3. Deposited €44. New balance: €329.

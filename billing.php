@@ -1,21 +1,23 @@
 <?php 
-session_start();
-require_once 'config/db.php';
-
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
+require_once 'includes/auth_check.php';
 require_once 'includes/header.php'; 
 require_once 'includes/sidebar.php'; 
 
-$user_id = $_SESSION['user_id'];
+$balance = $user['balance'];
+$user_id = $user['id'];
 
-// Fetch current balance
-$stmt = $pdo->prepare("SELECT balance FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$balance = $stmt->fetchColumn();
+// Automatically mark pending payments older than 1 hour as expired
+$stmt_expire = $pdo->prepare("
+    UPDATE payments 
+    SET status = 'expired' 
+    WHERE user_id = ? AND status = 'pending' AND created_at < NOW() - INTERVAL 1 HOUR
+");
+$stmt_expire->execute([$user_id]);
+
+// Fetch recent payments
+$stmt_payments = $pdo->prepare("SELECT * FROM payments WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+$stmt_payments->execute([$user_id]);
+$recent_payments = $stmt_payments->fetchAll();
 ?>
 
 <div class="p-4 sm:ml-64">
@@ -135,6 +137,89 @@ $balance = $stmt->fetchColumn();
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Recent Deposits -->
+        <div class="glass-card p-8 mt-8">
+            <h3 class="text-xl font-bold mb-6 dark:text-white text-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-clock-rotate-left text-neon-blue"></i>
+                Recent Deposit Activity
+            </h3>
+            
+            <?php if (empty($recent_payments)): ?>
+                <div class="text-center py-10 text-gray-500">
+                    <i class="fa-solid fa-receipt text-4xl mb-3 opacity-30"></i>
+                    <p class="text-sm">No deposits found on record.</p>
+                </div>
+            <?php else: ?>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="border-b border-light-border dark:border-dark-border text-gray-500 text-xs uppercase tracking-wider">
+                                <th class="py-4 pr-4">Date</th>
+                                <th class="py-4 pr-4">Order ID</th>
+                                <th class="py-4 pr-4">Amount</th>
+                                <th class="py-4 pr-4">Method</th>
+                                <th class="py-4 pr-4">Status</th>
+                                <th class="py-4">Info</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-light-border dark:divide-dark-border">
+                            <?php foreach ($recent_payments as $payment): ?>
+                                <tr class="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                                    <td class="py-4 pr-4 font-semibold text-gray-700 dark:text-gray-300">
+                                        <?php echo date('M d, Y H:i', strtotime($payment['created_at'])); ?>
+                                    </td>
+                                    <td class="py-4 pr-4 font-mono font-bold dark:text-white text-slate-900">
+                                        <?php echo htmlspecialchars($payment['order_id']); ?>
+                                    </td>
+                                    <td class="py-4 pr-4 font-bold text-neon-blue">
+                                        €<?php echo number_format($payment['amount'], 2); ?>
+                                    </td>
+                                    <td class="py-4 pr-4 text-xs font-semibold text-gray-500 uppercase tracking-widest">
+                                        <?php echo htmlspecialchars($payment['provider']); ?>
+                                    </td>
+                                    <td class="py-4 pr-4">
+                                        <?php 
+                                        $status = strtolower($payment['status']);
+                                        if ($status === 'paid' || $status === 'paid_over'): 
+                                        ?>
+                                            <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 rounded-lg text-xs font-bold uppercase tracking-wider">
+                                                Paid
+                                            </span>
+                                        <?php elseif ($status === 'expired'): ?>
+                                            <span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/25 rounded-lg text-xs font-bold uppercase tracking-wider">
+                                                Expired
+                                            </span>
+                                        <?php elseif ($status === 'cancelled'): ?>
+                                            <span class="px-2.5 py-1 bg-slate-500/10 text-gray-400 border border-slate-500/25 rounded-lg text-xs font-bold uppercase tracking-wider">
+                                                Cancelled
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="px-2.5 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/25 rounded-lg text-xs font-bold uppercase tracking-wider animate-pulse">
+                                                Pending
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-4 text-xs font-semibold">
+                                        <?php 
+                                        if ($status === 'paid' || $status === 'paid_over'): 
+                                            echo '<span class="text-emerald-400">Payment Completed</span>';
+                                        elseif ($status === 'expired'): 
+                                            echo '<span class="text-rose-400">Invoice Expired</span>';
+                                        elseif ($status === 'cancelled'): 
+                                            echo '<span class="text-gray-400">Transaction Cancelled</span>';
+                                        else: 
+                                            echo '<span class="text-yellow-500 flex items-center gap-1.5"><i class="fa-solid fa-spinner animate-spin"></i> Waiting for payment confirmation</span>';
+                                        endif; 
+                                        ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

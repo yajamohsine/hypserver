@@ -1,13 +1,7 @@
 <?php 
-session_start();
-require_once 'config/db.php';
+require_once 'includes/auth_check.php';
 require_once 'includes/csrf.php';
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
 
-$user_id = $_SESSION['user_id'];
 $success = '';
 $error = '';
 
@@ -22,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("UPDATE users SET full_name = ? WHERE id = ?");
         $stmt->execute([$name, $user_id]);
         $success = "Profile updated successfully.";
+        $user['full_name'] = $name;
     }
 
     if (isset($_POST['update_password'])) {
@@ -42,11 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-// Fetch User Data
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch();
 
 require_once 'includes/header.php'; 
 require_once 'includes/sidebar.php'; 

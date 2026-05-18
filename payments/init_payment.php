@@ -1,18 +1,15 @@
 <?php
-session_start();
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/auth_check.php';
 require_once __DIR__ . '/../includes/csrf.php';
-
-// Ensure user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit();
-}
 
 // Simple logging helper
 function log_event($file, $message) {
     $timestamp = date('[Y-m-d H:i:s]');
-    file_put_contents(__DIR__ . '/../logs/' . $file, "$timestamp $message\n", FILE_APPEND);
+    $dir = __DIR__ . '/../logs';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    @file_put_contents($dir . '/' . $file, "$timestamp $message\n", FILE_APPEND);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -75,9 +72,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         log_event('cryptomus.log', "Created pending payment: $order_id for user_id: $user_id, amount: €$amount");
 
     } catch (PDOException $e) {
-        log_event('errors.log', "Database insertion failed for payment: " . $e->getMessage());
-        header("Location: ../billing.php?error=db_error");
-        exit();
+        // Automatically create table if it does not exist (SQLSTATE 42S02)
+        if ($e->getCode() === '42S02' || strpos($e->getMessage(), "doesn't exist") !== false) {
+            log_event('errors.log', "Payments table not found. Attempting automatic table creation.");
+            try {
+                $createSql = "
+                CREATE TABLE IF NOT EXISTS payments (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    order_id VARCHAR(100) NOT NULL,
+                    provider_payment_id VARCHAR(255) DEFAULT NULL,
+                    provider VARCHAR(50) DEFAULT 'cryptomus',
+                    amount DECIMAL(10, 2) NOT NULL,
+                    currency VARCHAR(10) DEFAULT 'EUR',
+                    status ENUM('pending', 'processing', 'paid', 'paid_over', 'failed', 'expired', 'cancelled') DEFAULT 'pending',
+                    wallet_address VARCHAR(255) DEFAULT NULL,
+                    network VARCHAR(100) DEFAULT NULL,
+                    webhook_payload LONGTEXT DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    paid_at TIMESTAMP NULL DEFAULT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE INDEX idx_order_id (order_id),
+                    UNIQUE INDEX idx_provider_payment_id (provider_payment_id),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+                ";
+                $pdo->exec($createSql);
+                log_event('errors.log', "Payments table created successfully. Retrying insertion.");
+                
+                // Retry insertion
+                $stmt = $pdo->prepare("
+                    INSERT INTO payments (user_id, order_id, amount, currency, status, provider) 
+                    VALUES (?, ?, ?, 'EUR', 'pending', 'cryptomus')
+                ");
+                $stmt->execute([$user_id, $order_id, $amount]);
+                log_event('cryptomus.log', "Created pending payment after table creation: $order_id for user_id: $user_id, amount: €$amount");
+            } catch (PDOException $retryException) {
+                log_event('errors.log', "Retry insertion failed after table creation: " . $retryException->getMessage());
+                header("Location: ../billing.php?error=db_error");
+                exit();
+            }
+        } else {
+            log_event('errors.log', "Database insertion failed for payment: " . $e->getMessage());
+            header("Location: ../billing.php?error=db_error");
+            exit();
+        }
     }
 
     // 5. Dynamic Base URL Discovery

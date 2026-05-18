@@ -5,11 +5,18 @@ require_once __DIR__ . '/../config/db.php';
 // Helper for audit logging
 function log_webhook($file, $message) {
     $timestamp = date('[Y-m-d H:i:s]');
-    file_put_contents(__DIR__ . '/../logs/' . $file, "$timestamp $message\n", FILE_APPEND);
+    $dir = __DIR__ . '/../logs';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    @file_put_contents($dir . '/' . $file, "$timestamp $message\n", FILE_APPEND);
 }
 
 // 1. Retrieve Raw Webhook Payload
 $rawContent = file_get_contents('php://input');
+if (empty($rawContent) && isset($GLOBALS['MOCK_WEBHOOK_PAYLOAD'])) {
+    $rawContent = $GLOBALS['MOCK_WEBHOOK_PAYLOAD'];
+}
 
 if (empty($rawContent)) {
     log_webhook('errors.log', "Webhook received empty body.");

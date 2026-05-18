@@ -1,12 +1,5 @@
 <?php 
-session_start();
-require_once 'config/db.php';
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
-$user_id = $_SESSION['user_id'];
+require_once 'includes/auth_check.php';
 
 // Fetch real tickets from database
 $stmt = $pdo->prepare("SELECT * FROM tickets WHERE user_id = ? ORDER BY created_at DESC");
