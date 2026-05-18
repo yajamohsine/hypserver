@@ -174,9 +174,9 @@ $count_tickets = 0; // Placeholder for now
                                         </td>
                                         <td class="px-6 py-4 text-right">
                                             <?php if ($order['status'] == 'Delivered'): ?>
-                                                <a href="orders.php?id=<?php echo $order['id']; ?>" class="px-3 py-1.5 bg-neon-pink/10 text-neon-pink border border-neon-pink/20 rounded-lg text-[10px] font-bold uppercase hover:bg-neon-pink hover:text-white transition-all">View Credentials</a>
+                                                <a href="orders.php?id=<?php echo $order['id']; ?>" class="px-3 py-1.5 bg-neon-pink/10 text-neon-pink border border-neon-pink/20 rounded-lg text-[10px] font-bold uppercase hover:bg-neon-pink hover:text-white transition-all whitespace-nowrap inline-block">View Credentials</a>
                                             <?php else: ?>
-                                                <button class="text-gray-400 cursor-not-allowed text-xs">In Progress</button>
+                                                <button class="text-gray-400 cursor-not-allowed text-xs whitespace-nowrap inline-block">In Progress</button>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
