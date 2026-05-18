@@ -1,1 +1,7 @@
 # Cryptomus API General Log
+[2026-05-18 22:45:53] Created pending payment: DEP-AC9BE1682F for user_id: 3, amount: €44
+[2026-05-18 22:45:53] Initiating Cryptomus checkout for DEP-AC9BE1682F. Payload: {"amount":"44.00","currency":"EUR","order_id":"DEP-AC9BE1682F","url_return":"http:\/\/localhost:8080\/rdp-reselling\/payments\/payment_success?order_id=DEP-AC9BE1682F","url_callback":"http:\/\/localhost:8080\/rdp-reselling\/payments\/cryptomus_webhook","lifetime":3600}
+[2026-05-18 22:45:54] Successfully created Cryptomus checkout for DEP-AC9BE1682F. Redirecting. UUID: b31ff1e4-a8e4-4db2-b482-3bac652e6ad0
+[2026-05-18 22:46:45] Created pending payment: DEP-9BEC326662 for user_id: 3, amount: €44
+[2026-05-18 22:46:45] Initiating Cryptomus checkout for DEP-9BEC326662. Payload: {"amount":"44.00","currency":"EUR","order_id":"DEP-9BEC326662","url_return":"http:\/\/localhost:8080\/rdp-reselling\/payments\/payment_success?order_id=DEP-9BEC326662","url_callback":"http:\/\/localhost:8080\/rdp-reselling\/payments\/cryptomus_webhook","lifetime":3600}
+[2026-05-18 22:46:46] Successfully created Cryptomus checkout for DEP-9BEC326662. Redirecting. UUID: adfda05b-9d30-4a0a-9a04-e9b25d95fa84
